@@ -3,6 +3,21 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+const getToken = (email)=>{
+    const refreshToken = jwt.sign(
+        {email},
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn : '30 days' }
+    );
+    const accessToken = jwt.sign(
+        {email},
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn : '1h' }
+    );
+
+    return [refreshToken,accessToken];
+}
+
 const registerUser = async (req,res)=>{
     const { email,password,username } = req.body;
 
@@ -42,16 +57,8 @@ const loginUser = async (req,res)=>{
         const compare = await bcrypt.compare(password,hash);
 
         if( compare ){
-            const refreshToken = jwt.sign(
-                {email},
-                process.env.REFRESH_TOKEN_SECRET,
-                { expiresIn : '30 days' }
-            );
-            const accessToken = jwt.sign(
-                {email},
-                process.env.ACCESS_TOKEN_SECRET,
-                { expiresIn : '1h' }
-            );
+            
+            const [refreshToken,accessToken] = getToken(email);
 
             await pool.query(`
                 UPDATE USERS SET
@@ -74,6 +81,42 @@ const loginUser = async (req,res)=>{
 }
 
 const autoLogin = async (req,res)=>{
+    const { refreshToken } = req.body;
+
+    if( !refreshToken ){
+        res.status(400).json({ message : "refresh token is required" });
+        return;
+    }
+
+    jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+        async( err,decoded )=>{
+            if( err ){
+                res.status(400).json({ err,message : "refresh token expired : login again" });
+                return;
+            }
+            const result = await pool.query(
+                `SELECT USERNAME,REFRESH_TOKEN
+                FROM USERS 
+                WHERE EMAIL = $1`,
+                [decoded.email]
+            );
+            const [_,accessToken] = getToken();
+
+            if( result?.rows[0]?.refresh_token===refreshToken ){
+                res.status(200).json({ 
+                    message : "user logged in",
+                    username : result.rows[0].username,
+                    email : decoded.email,
+                    accessToken
+                });
+            }
+            else{
+                res.status(400).json({ message : "refresh token not valid" });
+            }
+        }
+    )
 
 }
 
