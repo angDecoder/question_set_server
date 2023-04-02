@@ -1,6 +1,7 @@
 const pool = require('../dbconfig');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const registerUser = async (req,res)=>{
     const { email,password,username } = req.body;
@@ -26,7 +27,7 @@ const registerUser = async (req,res)=>{
 
 const loginUser = async (req,res)=>{
     const { email,password } = req.body;
-    console.log('here');
+    // console.log('here');
     if( !email || !password ){
         res.status(401).json({ message : 'email and password are required' });
         return;
@@ -34,14 +35,37 @@ const loginUser = async (req,res)=>{
 
     try {
         const result = await pool.query(`
-            SELECT PASSWORD FROM USERS
+            SELECT PASSWORD,USERNAME FROM USERS
             WHERE EMAIL = $1
         `,[email]);
         const hash = result?.rows[0]?.password;
         const compare = await bcrypt.compare(password,hash);
 
-        if( compare )
-            res.json({ message : 'user logged in' });
+        if( compare ){
+            const refreshToken = jwt.sign(
+                {email},
+                process.env.REFRESH_TOKEN_SECRET,
+                { expiresIn : '30 days' }
+            );
+            const accessToken = jwt.sign(
+                {email},
+                process.env.ACCESS_TOKEN_SECRET,
+                { expiresIn : '1h' }
+            );
+
+            await pool.query(`
+                UPDATE USERS SET
+                REFRESH_TOKEN = '${refreshToken}' 
+                WHERE EMAIL = '${email}'
+            `,[]);
+
+            res.json({ 
+                message : 'user logged in',
+                username : result.rows[0].username,
+                refreshToken,
+                accessToken            
+            });
+        }
         else 
             res.status(401).json({ message : 'wrong password, try again' });
     } catch (error) {
@@ -50,7 +74,7 @@ const loginUser = async (req,res)=>{
 }
 
 const autoLogin = async (req,res)=>{
-    
+
 }
 
 const refresh = async (req,res)=>{
