@@ -4,8 +4,8 @@ const userController = require('../controller/userController');
 
 route.post('/register',userController.registerUser);
 route.post('/login',userController.loginUser);
-route.post('/logout',userController.logout);
-route.post('/refresh',userController.refresh);
-route.post('/autologin',userController.autoLogin);
+route.post('/logout',userController.logoutUser);
+route.post('/refresh',userController.refreshUser);
+route.post('/autologin',userController.autoLoginUser);
 
 module.exports = route;
