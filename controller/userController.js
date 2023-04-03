@@ -121,7 +121,33 @@ const autoLogin = async (req,res)=>{
 }
 
 const refresh = async (req,res)=>{
+    const { refreshToken } = req.body;
 
+    if( !refreshToken ){
+        res.status(400).json({ message : "couldn't find refresh token" });
+        return;
+    }
+
+    try {
+        jwt.verify(
+            refreshToken,
+            process.env.REFRESH_TOKEN_SECRET,
+            async(err,decoded)=>{
+                if( err ){
+                    res.status(403).json({ message : "refresh token expired" });
+                }
+
+                const [_,accessToken] = getToken(decoded.email);
+
+                res.json({ 
+                    message : "access token refreshed",
+                    accessToken
+                });
+            }
+        )
+    } catch (error) {
+        res.status(400).json({ message : "some error occured",error });
+    }
 }
 
 const logout = async (req,res)=>{
