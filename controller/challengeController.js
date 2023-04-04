@@ -14,7 +14,7 @@ const getAllChallenges = async(req,res)=>{
 
     try {
         const result = await pool.query(`
-            SELECT C.TITLE,C.TOTAL,C.ID
+            SELECT C.ID,C.TITLE,C.TOTAL,U.SOLVED,C.OWNER
             FROM USER_TO_CHALLENGE U
             INNER JOIN CHALLENGE C ON C.ID = U.CHALLENGE_ID
             WHERE U.USER_ID = $1;
@@ -29,11 +29,27 @@ const getAllChallenges = async(req,res)=>{
 }
 
 const addNewChallenge = async(req,res)=>{
-    res.json({ msg : 'ok' });
-    const { owner,title } = req.body;
-    if( !owner || !title ){
-        res.status(400).json({ message : "owner and title is required" });
+    const { email } = req.headers;
+    const { title } = req.body;
+
+    if( !email || !title ){
+        res.status(400).json({ message : "email and title are required" });
         return;
+    }
+
+    try {
+        const result = await pool.query(`
+            INSERT INTO CHALLENGE(ID,OWNER,TITLE)
+            VALUES($1,$2,$3)
+            RETURNING *;
+        `,[randomUUID(),email,title]);
+
+        res.status(201).json({
+            message : "new challenge added",
+            challenge : result?.rows[0]
+        });
+    } catch (error) {
+        res.status(400).json({ message : "some error occured",error });
     }
 }
 
