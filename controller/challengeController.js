@@ -53,7 +53,29 @@ const addNewChallenge = async(req,res)=>{
     }
 }
 
+const deleteChallenge = async(req,res)=>{
+    const { email } = req.headers;
+    const id = req?.params?.id;
+    
+    if( !id || !email ){
+        res.status(200).json({ message : "email and challenge id are required" });
+        return;
+    }
+
+    try {
+        await pool.query(`      
+            DELETE FROM CHALLENGE 
+            WHERE ID = $1;
+        `,[id]);
+
+        res.json({ message : "challenge deleted successfully" });
+    } catch (error) {
+        res.json({ message : "some error occured",error });
+    }
+}
+
 module.exports = {
     addNewChallenge,
-    getAllChallenges
+    getAllChallenges,
+    deleteChallenge
 }
