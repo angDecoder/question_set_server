@@ -22,6 +22,7 @@ app.get('/check',async(req,res)=>{
 
 app.use('/user',require('./routes/User'));
 app.use('/challenge',require('./routes/Challenge'));
+app.use('/question',require('./routes/Question'));
 
 const startServer = async()=>{
 
