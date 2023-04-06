@@ -8,5 +8,6 @@ route.use(authorizeUser);
 route.get('/',challengeController.getAllChallenges);
 route.post('/add',challengeController.addNewChallenge);
 route.delete('/:id',challengeController.deleteChallenge);
+route.put('/accept/:id',challengeController.acceptChallenge);
 
 module.exports = route;

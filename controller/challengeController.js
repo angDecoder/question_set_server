@@ -76,8 +76,33 @@ const deleteChallenge = async(req,res)=>{
     }
 }
 
+const acceptChallenge = async(req,res)=>{
+    const { email } = req.headers;
+    const id = req?.params?.id;
+
+    if( !email || !id ){
+        res.status(400).json({ message : "email and id are requried" });
+        return;
+    }
+
+    try {
+        await pool.query(`
+            INSERT INTO 
+            USER_TO_CHALLENGE(USER_ID,CHALLENGE_ID)
+            VALUES($1,$2);
+        `,[email,id]);
+
+        res.status(201).json({ 
+            message : "new challenge added"
+        })
+    } catch (error) {
+        res.status(400).json({ message : "some error occured",error });
+    }
+}
+
 module.exports = {
     addNewChallenge,
     getAllChallenges,
-    deleteChallenge
+    deleteChallenge,
+    acceptChallenge
 }
