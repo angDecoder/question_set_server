@@ -64,9 +64,11 @@ const deleteChallenge = async(req,res)=>{
 
     try {
         await pool.query(`      
-            DELETE FROM CHALLENGE 
-            WHERE ID = $1;
-        `,[id]);
+            DELETE
+            FROM USER_TO_CHALLENGE
+            WHERE USER_ID = $1
+            AND CHALLENGE_ID = $2;
+        `,[email,id]);
 
         res.json({ message : "challenge deleted successfully" });
     } catch (error) {
