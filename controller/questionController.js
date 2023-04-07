@@ -1,4 +1,5 @@
 const pool = require('../dbconfig');
+const { randomUUID } = require('crypto');
 
 const getAllQuestion = async(req,res)=>{
     const id = req?.params?.id;
@@ -36,7 +37,35 @@ const getAllQuestion = async(req,res)=>{
 }
 
 const addNewQuestion = async(req,res)=>{
+    const { title,tags,link,challenge_id } = req.body;
+    const id = randomUUID();
 
+    if( !title || !tags || !link || !challenge_id ){
+        req.status(400).json({ message : "title,challenge_id, tags and link are required" });
+        return;
+    }
+
+    let tagval = tags.reduce((tagval,elem)=>{
+        return tagval + ',"' + elem + '"';
+    },'');
+
+    tagval = "'{" + tagval.substring(1) + "}'";
+    // console.log();
+    try {
+        const result = await pool.query(`
+        INSERT INTO QUESTION
+        VALUES('${id}','${title}','${challenge_id}',${tagval},'${link}');
+    `,[]);
+
+        res.status(201).json({
+            message : "new question added"
+        });
+    } catch (error) {
+        res.status(400).json({
+            message : "some error occured",
+            error
+        })
+    }
 }
 
 const deleteQuestion = async(req,res)=>{

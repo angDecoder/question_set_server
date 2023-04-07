@@ -10,14 +10,14 @@ const checkOwner = async(req,res,next)=>{
         });
         return;
     }
-
+    // console.log(challenge_id);
     try {
         const result = await pool.query(`
             SELECT OWNER
             FROM CHALLENGE
             WHERE ID = $1;
-        `[challenge_id]);
-
+        `,[challenge_id]);
+        // console.log(result.rows);
         if( result?.rows[0]?.owner != email ){
             res.status(400).json({
                 message : "You are not allowed to perform action on this challenge"
@@ -27,7 +27,8 @@ const checkOwner = async(req,res,next)=>{
         next();
     } catch (error) {
         res.status(400).json({
-            message : "some error occured"
+            message : "some error occured here",
+            error
         })
     }
 }
