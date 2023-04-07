@@ -91,13 +91,39 @@ const deleteQuestion = async(req,res)=>{
     }
 }
 
-const updateQuestion = async(req,res)=>{
+const solveQuestion = async(req,res)=>{
+    const { email } = req.headers;
+    const id = req?.params?.id;
+    const { language,solution } = req.body;
 
+    if( !language || !solution || !id ){
+        res.status(400).json({
+            message : "language,solution and question_id are required"
+        });
+
+        return;
+    }
+
+    try {
+        await pool.query(`
+            INSERT INTO USER_TO_QUESTION
+            VALUES ($1,$2,$3,$4,$5)
+            ON CONFLICT( USER_ID,QUESTION_ID )
+            DO
+            UPDATE SET SOLVED = TRUE,
+            LANGUAGE = $4,
+            SOLUTION = $5;
+        `,[email,id,true,language,solution]);
+
+        res.json({message : "question solved"});
+    } catch (error) {
+        res.status(400).json({ message : "some error occured" });
+    }    
 }
 
 module.exports = {
     getAllQuestion,
     addNewQuestion,
     deleteQuestion,
-    updateQuestion
+    solveQuestion
 }
