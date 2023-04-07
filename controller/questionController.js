@@ -69,7 +69,26 @@ const addNewQuestion = async(req,res)=>{
 }
 
 const deleteQuestion = async(req,res)=>{
+    const id = req?.params?.id;
 
+    if( !id ){
+        res.status(400).json({ message : "id is required" });
+        return;
+    }
+
+    try {
+        await pool.query(`
+            DELETE FROM QUESTION
+            WHERE ID = $1
+        `,[id]);
+
+        res.json({ message : 'question deleted successfully' });
+    } catch (error) {
+        res.status(400).json({
+            message : "some error occured",
+            error
+        })
+    }
 }
 
 const updateQuestion = async(req,res)=>{
