@@ -1,6 +1,4 @@
 const pool = require('../dbconfig');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
 require('dotenv').config();
 
