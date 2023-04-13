@@ -23,7 +23,7 @@ const registerUser = async (req, res) => {
     const { email, password, username } = req.body;
 
     if (!email || !password || !username) {
-        res.status(401).json({ message: 'email, username and password are required' });
+        res.status(400).json({ message: 'email, username and password are required' });
         return;
     }
 
@@ -37,7 +37,13 @@ const registerUser = async (req, res) => {
         res.status(201).json({ message: 'new user created' });
     } catch (error) {
         // console.log(error);
-        res.status(400).json({ message: 'user not created', error });
+        if( error?.code==="23505" ){
+            res.status(400).json({
+                message : error?.detail.replaceAll('(','').replaceAll(')','')
+            });
+            return;
+        }
+        res.status(500).json({ message: 'some error occured', error });
     }
 }
 
