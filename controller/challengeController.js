@@ -4,19 +4,26 @@ require('dotenv').config();
 
 const getAllChallenges = async(req,res)=>{
     const { email } = req.headers;
+    // console.log(req.query);
+    let { offset } = req.query;
     
     if( !email ){
         res.status(400).json({ message : "email is required" });
         return;
     }
 
+    if( !offset )
+        offset = 0;
+
     try {
         const result = await pool.query(`
             SELECT C.ID,C.TITLE,C.TOTAL,U.SOLVED,C.OWNER
             FROM USER_TO_CHALLENGE U
             INNER JOIN CHALLENGE C ON C.ID = U.CHALLENGE_ID
-            WHERE U.USER_ID = $1;
-        `,[email]);
+            WHERE U.USER_ID = $1
+            ORDER BY C.CREATED_AT , C.TITLE
+            OFFSET $2            
+        `,[email,offset]);
 
         res.status(200).json({
             result : result.rows

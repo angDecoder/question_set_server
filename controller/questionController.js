@@ -2,12 +2,14 @@ const pool = require('../dbconfig');
 const { randomUUID } = require('crypto');
 
 const getAllQuestion = async(req,res)=>{
-    const id = req?.params?.id;
-    // console.log(id);
-    if( !id ){
+    let { challengeId,offset } = req.query;
+    if( !challengeId ){
         res.status(400).json({ message : "challenge_id are requried" });
         return;
     }
+
+    if( !offset )
+        offset = 0;
 
     try {
         const result = await pool.query(`
@@ -21,11 +23,13 @@ const getAllQuestion = async(req,res)=>{
             FROM QUESTION Q
             LEFT JOIN (
                 SELECT SOLVED,QUESTION_ID FROM USER_TO_QUESTION
-                WHERE USER_ID = 'test1@gmail.com'
+                WHERE USER_ID = 'test@gmail.com'
             ) U
             ON Q.ID = U.QUESTION_ID
-            WHERE Q.CHALLENGE_ID = $1;
-        `,[id])
+            WHERE Q.CHALLENGE_ID = $1
+            ORDER BY Q.CREATED_AT, Q.ID
+            OFFSET $1
+        `,[challengeId,offset])
 
         res.json({
             message : "successful",
