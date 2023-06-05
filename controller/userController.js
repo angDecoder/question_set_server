@@ -109,7 +109,7 @@ const autoLoginUser = async (req, res) => {
                 WHERE EMAIL = $1`,
                 [decoded.email]
             );
-            const [_, accessToken] = getToken();
+            const [_, accessToken] = getToken(decoded.email);
 
             if (result?.rows[0]?.refresh_token === refreshToken) {
                 res.status(200).json({
