@@ -42,10 +42,11 @@ const getAllQuestion = async(req,res)=>{
 }
 
 const addNewQuestion = async(req,res)=>{
-    const { title,tags,link,challenge_id } = req.body;
-    const id = randomUUID();
+    const { title,tags,link } = req.body;
+    const { id } = req.query;
+    const unique_id = randomUUID();
 
-    if( !title || !tags || !link || !challenge_id ){
+    if( !title || !tags || !link || !id ){
         req.status(400).json({ message : "title,challenge_id, tags and link are required" });
         return;
     }
@@ -59,7 +60,7 @@ const addNewQuestion = async(req,res)=>{
     try {
         const result = await pool.query(`
         INSERT INTO QUESTION
-        VALUES('${id}','${title}','${challenge_id}',${tagval},'${link}');
+        VALUES('${unique_id}','${title}','${id}',${tagval},'${link}');
     `,[]);
 
         res.status(201).json({
