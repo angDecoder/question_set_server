@@ -60,7 +60,7 @@ const addNewChallenge = async(req,res)=>{
 
 const deleteChallenge = async(req,res)=>{
     const { email } = req.headers;
-    const id = req?.params?.id;
+    const { id } = req.query;
     
     if( !id || !email ){
         res.status(200).json({ message : "email and challenge id are required" });

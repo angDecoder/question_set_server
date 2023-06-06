@@ -1,22 +1,22 @@
 const pool = require('../dbconfig');
 
 const checkOwner = async(req,res,next)=>{
-    const { challenge_id } = req.body;
+    const { id } = req.query;
     const { email } = req.headers;
 
-    if( !email || !challenge_id ){
+    if( !email || !id ){
         res.status(400).json({
             message : "email and challenge_id are required"
         });
         return;
     }
-    // console.log(challenge_id);
+    // console.log(id);
     try {
         const result = await pool.query(`
             SELECT OWNER
             FROM CHALLENGE
             WHERE ID = $1;
-        `,[challenge_id]);
+        `,[id]);
         // console.log(result.rows);
         if( result?.rows[0]?.owner != email ){
             res.status(400).json({

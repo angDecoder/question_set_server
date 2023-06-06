@@ -11,7 +11,7 @@ route.get('/check',(req,res)=>{
 })
 route.get('/',challengeController.getAllChallenges);
 route.post('/add',challengeController.addNewChallenge);
-route.delete('/:id',challengeController.deleteChallenge);
+route.delete('/',challengeController.deleteChallenge);
 route.put('/accept/:id',challengeController.acceptChallenge);
 
 module.exports = route;
