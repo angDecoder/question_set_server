@@ -3,18 +3,19 @@ const { randomUUID } = require('crypto');
 
 const getAllQuestion = async(req,res)=>{
     let { id,offset } = req.query;
-    let { email } = req.body;
+    let { email } = req.headers;
     if( !id ){
         res.status(400).json({ message : "challenge_id are requried" });
         return;
     }
 
-    if( !offset )
+    if( !offset || typeof offset !== 'number' )
         offset = 0;
 
+    console.log(email,id,offset);
     try {
         const result = await pool.query(`
-            SELECT Q.ID,Q.TITLE,Q.TAGS,
+            SELECT Q.ID,Q.TITLE,Q.TAGS,Q.LINK,
             (
                 CASE
                     WHEN U.SOLVED is NULL THEN FALSE
@@ -127,9 +128,33 @@ const solveQuestion = async(req,res)=>{
     }    
 }
 
+const toggleCheck = async(req,res)=>{
+    const { email } = req.headers;
+    const { id } = req.query;
+
+    if( !email || !id ){
+        return res.json({ message : 'email and question_id are required' });
+    }
+
+    // console.log('toggleCheck',id,email);
+    try {
+        await pool.query(`
+            UPDATE USER_TO_QUESTION 
+            set solved = not solved
+            WHERE USER_ID = 'test@gmail.com' 
+            AND QUESTION_ID = '26c7bc0e-8539-4946-bb58-db7bfc4fd1e2'
+        `,[]);
+
+        return res.json({ message : "success" });
+    } catch (error) {
+        return res.status(500).json({ message : 'some error occured',error }) ;
+    }
+}
+
 module.exports = {
     getAllQuestion,
     addNewQuestion,
     deleteQuestion,
-    solveQuestion
+    solveQuestion,
+    toggleCheck
 }
