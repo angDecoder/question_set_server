@@ -9,10 +9,10 @@ const getAllQuestion = async(req,res)=>{
         return;
     }
 
-    if( !offset || typeof offset !== 'number' )
+    if( offset===null || offset===undefined )
         offset = 0;
 
-    console.log(email,id,offset);
+    // console.log(email,id,offset);
     try {
         const result = await pool.query(`
             SELECT Q.ID,Q.TITLE,Q.TAGS,Q.LINK,
@@ -61,11 +61,13 @@ const addNewQuestion = async(req,res)=>{
     try {
         const result = await pool.query(`
         INSERT INTO QUESTION
-        VALUES('${unique_id}','${title}','${id}',${tagval},'${link}');
+        VALUES('${unique_id}','${title}','${id}',${tagval},'${link}')
+        RETURNING *
     `,[]);
 
         res.status(201).json({
-            message : "new question added"
+            message : "new question added",
+            question : result.rows[0]
         });
     } catch (error) {
         res.status(400).json({
@@ -76,18 +78,19 @@ const addNewQuestion = async(req,res)=>{
 }
 
 const deleteQuestion = async(req,res)=>{
-    const id = req?.params?.id;
+    const { id,question_id } = req.query;
 
-    if( !id ){
-        res.status(400).json({ message : "id is required" });
+    if( !id || !question_id ){
+        res.status(400).json({ message : "question_id and challenge_id are required" });
         return;
     }
 
     try {
         await pool.query(`
             DELETE FROM QUESTION
-            WHERE ID = $1
-        `,[id]);
+            WHERE ID = '${question_id}'
+            AND CHALLENGE_ID = '${id}'
+        `,[]);
 
         res.json({ message : 'question deleted successfully' });
     } catch (error) {
@@ -128,33 +131,9 @@ const solveQuestion = async(req,res)=>{
     }    
 }
 
-const toggleCheck = async(req,res)=>{
-    const { email } = req.headers;
-    const { id } = req.query;
-
-    if( !email || !id ){
-        return res.json({ message : 'email and question_id are required' });
-    }
-
-    // console.log('toggleCheck',id,email);
-    try {
-        await pool.query(`
-            UPDATE USER_TO_QUESTION 
-            set solved = not solved
-            WHERE USER_ID = 'test@gmail.com' 
-            AND QUESTION_ID = '26c7bc0e-8539-4946-bb58-db7bfc4fd1e2'
-        `,[]);
-
-        return res.json({ message : "success" });
-    } catch (error) {
-        return res.status(500).json({ message : 'some error occured',error }) ;
-    }
-}
-
 module.exports = {
     getAllQuestion,
     addNewQuestion,
     deleteQuestion,
     solveQuestion,
-    toggleCheck
 }
