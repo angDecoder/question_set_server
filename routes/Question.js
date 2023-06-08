@@ -7,7 +7,7 @@ const route = express.Router();
 
 route.use(authorizeUser);
 route.get('/',questionController.getAllQuestion);
-route.put('/solve',questionController.solveQuestion);
+route.put('/solution',questionController.setSolution);
 route.get('/solution',questionController.getSolution);
 
 route.use(checkOwner);

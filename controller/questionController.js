@@ -101,33 +101,32 @@ const deleteQuestion = async (req, res) => {
     }
 }
 
-const solveQuestion = async (req, res) => {
+const setSolution = async (req, res) => {
     const { email } = req.headers;
     const { id } = req.query;
-    const { language, solution } = req.body;
+    const { language, code } = req.body;
 
-    if (!language || !solution || !id) {
-        res.status(400).json({
-            message: "language,solution and question_id are required"
+    if (!language || !code || !id) {
+        return res.status(400).json({
+            message: "language,code and question_id are required"
         });
 
-        return;
     }
 
     try {
-        await pool.query(`
+        const result = await pool.query(`
             INSERT INTO USER_TO_QUESTION
             VALUES ($1,$2,$3,$4,$5)
             ON CONFLICT( USER_ID,QUESTION_ID )
             DO
             UPDATE SET SOLVED = TRUE,
             LANGUAGE = $4,
-            SOLUTION = $5;
-        `, [email, id, true, language, solution]);
-
-        res.json({ message: "question solved" });
+            code = $5;
+        `, [email, id, true, language, code]);
+        // console.log(result.rows[0]);
+        return res.json({ message: "question solved" });
     } catch (error) {
-        res.status(400).json({ message: "some error occured" });
+        return res.status(400).json({ message: "some error occured" });
     }
 }
 
@@ -140,14 +139,14 @@ const getSolution = async (req, res) => {
 
     try {
         let result = await pool.query(`
-            SELECT SOLVED, LANGUAGE, SOLUTION
+            SELECT SOLVED, LANGUAGE, CODE
             FROM USER_TO_QUESTION
             WHERE USER_ID = $1 
             AND QUESTION_ID = $2
         `, [email, id]);
 
         result = result.rowCount ? result.rows[0] : {};
-        return res.json({ message: 'success', solution: result });
+        return res.json({ message: 'success', solution : result });
     } catch (error) {
         res.status(400).json({ message: "some error occured" });
 
@@ -159,6 +158,6 @@ module.exports = {
     getAllQuestion,
     addNewQuestion,
     deleteQuestion,
-    solveQuestion,
+    setSolution,
     getSolution
 }
