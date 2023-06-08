@@ -1,15 +1,15 @@
 const pool = require('../dbconfig');
 const { randomUUID } = require('crypto');
 
-const getAllQuestion = async(req,res)=>{
-    let { id,offset } = req.query;
+const getAllQuestion = async (req, res) => {
+    let { id, offset } = req.query;
     let { email } = req.headers;
-    if( !id ){
-        res.status(400).json({ message : "challenge_id are requried" });
+    if (!id) {
+        res.status(400).json({ message: "challenge_id are requried" });
         return;
     }
 
-    if( offset===null || offset===undefined )
+    if (offset === null || offset === undefined)
         offset = 0;
 
     // console.log(email,id,offset);
@@ -31,30 +31,30 @@ const getAllQuestion = async(req,res)=>{
             WHERE Q.CHALLENGE_ID = '${id}'
             ORDER BY Q.CREATED_AT, Q.ID
             OFFSET ${offset}
-        `,[])
+        `, [])
 
         res.json({
-            message : "successful",
-            questions : result?.rows
+            message: "successful",
+            questions: result?.rows
         });
     } catch (error) {
-        res.json({ message : "some error occured",error });
+        res.json({ message: "some error occured", error });
     }
 }
 
-const addNewQuestion = async(req,res)=>{
-    const { title,tags,link } = req.body;
+const addNewQuestion = async (req, res) => {
+    const { title, tags, link } = req.body;
     const { id } = req.query;
     const unique_id = randomUUID();
 
-    if( !title || !tags || !link || !id ){
-        req.status(400).json({ message : "title,challenge_id, tags and link are required" });
+    if (!title || !tags || !link || !id) {
+        req.status(400).json({ message: "title,challenge_id, tags and link are required" });
         return;
     }
 
-    let tagval = tags.reduce((tagval,elem)=>{
+    let tagval = tags.reduce((tagval, elem) => {
         return tagval + ',"' + elem + '"';
-    },'');
+    }, '');
 
     tagval = "'{" + tagval.substring(1) + "}'";
     // console.log();
@@ -63,25 +63,25 @@ const addNewQuestion = async(req,res)=>{
         INSERT INTO QUESTION
         VALUES('${unique_id}','${title}','${id}',${tagval},'${link}')
         RETURNING *
-    `,[]);
+    `, []);
 
         res.status(201).json({
-            message : "new question added",
-            question : result.rows[0]
+            message: "new question added",
+            question: result.rows[0]
         });
     } catch (error) {
         res.status(400).json({
-            message : "some error occured",
+            message: "some error occured",
             error
         })
     }
 }
 
-const deleteQuestion = async(req,res)=>{
-    const { id,question_id } = req.query;
+const deleteQuestion = async (req, res) => {
+    const { id, question_id } = req.query;
 
-    if( !id || !question_id ){
-        res.status(400).json({ message : "question_id and challenge_id are required" });
+    if (!id || !question_id) {
+        res.status(400).json({ message: "question_id and challenge_id are required" });
         return;
     }
 
@@ -90,25 +90,25 @@ const deleteQuestion = async(req,res)=>{
             DELETE FROM QUESTION
             WHERE ID = '${question_id}'
             AND CHALLENGE_ID = '${id}'
-        `,[]);
+        `, []);
 
-        res.json({ message : 'question deleted successfully' });
+        res.json({ message: 'question deleted successfully' });
     } catch (error) {
         res.status(400).json({
-            message : "some error occured",
+            message: "some error occured",
             error
         })
     }
 }
 
-const solveQuestion = async(req,res)=>{
+const solveQuestion = async (req, res) => {
     const { email } = req.headers;
-    const id = req?.params?.id;
-    const { language,solution } = req.body;
+    const { id } = req.query;
+    const { language, solution } = req.body;
 
-    if( !language || !solution || !id ){
+    if (!language || !solution || !id) {
         res.status(400).json({
-            message : "language,solution and question_id are required"
+            message: "language,solution and question_id are required"
         });
 
         return;
@@ -123,12 +123,36 @@ const solveQuestion = async(req,res)=>{
             UPDATE SET SOLVED = TRUE,
             LANGUAGE = $4,
             SOLUTION = $5;
-        `,[email,id,true,language,solution]);
+        `, [email, id, true, language, solution]);
 
-        res.json({message : "question solved"});
+        res.json({ message: "question solved" });
     } catch (error) {
-        res.status(400).json({ message : "some error occured" });
-    }    
+        res.status(400).json({ message: "some error occured" });
+    }
+}
+
+const getSolution = async (req, res) => {
+    const { id } = req.query;
+    let { email } = req.headers;
+
+    if (!id || !email)
+        return res.json({ message: 'question_id and email are required' });
+
+    try {
+        let result = await pool.query(`
+            SELECT SOLVED, LANGUAGE, SOLUTION
+            FROM USER_TO_QUESTION
+            WHERE USER_ID = $1 
+            AND QUESTION_ID = $2
+        `, [email, id]);
+
+        result = result.rowCount ? result.rows[0] : {};
+        return res.json({ message: 'success', solution: result });
+    } catch (error) {
+        res.status(400).json({ message: "some error occured" });
+
+    }
+
 }
 
 module.exports = {
@@ -136,4 +160,5 @@ module.exports = {
     addNewQuestion,
     deleteQuestion,
     solveQuestion,
+    getSolution
 }
